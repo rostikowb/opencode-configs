@@ -1,0 +1,18 @@
+# Local secrets — never commit real values (copy secrets.env.example → secrets.env)
+secrets.env
+
+# Backup files created by install.ps1 (never overwrite live targets)
+*.bak-*
+
+# Local app data / caches — never tracked
+.local/
+.cache/
+
+# Dependencies
+node_modules/
+
+# Evidence capture (per-todo QA artifacts, not part of the repo)
+.omo/evidence/
+
+# Logs
+*.log
