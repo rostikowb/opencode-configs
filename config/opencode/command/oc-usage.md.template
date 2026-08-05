@@ -1,0 +1,43 @@
+---
+description: Show real OpenCode Go usage statistics (tokens and cost) from the oc-usage CLI
+agent: build
+---
+
+Report real OpenCode Go usage statistics (tokens and cost per model) using the oc-usage CLI.
+
+## Steps
+
+1. Determine the CLI arguments:
+   - If the user typed arguments after `/oc-usage` (they arrive as `$ARGUMENTS`), use them verbatim.
+   - If `$ARGUMENTS` is empty, use `--json` so the output is machine-parseable.
+
+2. Run the CLI (Windows absolute path — do not change it):
+   ```
+   node {{OC_USAGE_DIR}}\src\index.js $ARGUMENTS
+   ```
+   Capture stdout, stderr, and the exit code.
+
+3. If the exit code is non-zero, read stderr and explain the failure to the user:
+   - Exit 1 — usage error: bad flag or argument; show the help text from stderr.
+   - Exit 2 — truncated: the report is partial because of a `--limit` cutoff.
+   - Exit 3 — auth: cookie missing, expired, or invalid. Tell the user to run:
+     `node {{OC_USAGE_DIR}}\src\index.js --setup`
+     (the cookie is copied from DevTools → Application → Cookies → https://opencode.ai → `auth`).
+   - Exit 4 — protocol drift or partial: the opencode.ai dashboard bundle changed or data is partial. Re-run once; if it persists, file an issue. This is NOT the user's cookie.
+   - Exit 5 — refused or localdb: a service refused the request or the local database is unreadable.
+
+4. If the run produced data, render a clean summary in the chat:
+   - A markdown table, one row per model, with columns: Model, Input, Output, Reasoning, Cache Read, Cache Write, Cost (USD).
+   - A final **TOTAL** row summing all models.
+   - Do NOT paste raw JSON unless the user explicitly asks for it.
+   - If the JSON field names differ from the above, adapt to what the tool emits, but keep a per-model breakdown plus a total.
+
+5. Optional `--html` variant — adapt to what the tool actually supports:
+   - Check the tool's `--help` output for an `--html` flag.
+   - If `--help` lists `--html`: running `node {{OC_USAGE_DIR}}\src\index.js --html` writes a styled report to `%LOCALAPPDATA%\oc-usage\report.html` and opens it in the browser. Offer this to the user as an alternative to the in-chat table.
+   - If `--help` does not list it, skip this step silently.
+
+## Security rules (non-negotiable)
+
+- NEVER print, echo, or paste the auth cookie, workspace id, or any secret. The CLI output never contains them, but do not read or echo its config files either (`%LOCALAPPDATA%\oc-usage\cookie.bin`, `workspace.txt`, `usage.jsonl`, or `~/.local/share/opencode/auth.json`).
+- Do not modify anything inside `{{OC_USAGE_DIR}}` — run the tool read-only.
