@@ -1,0 +1,131 @@
+// OMO configuration
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
+  "[opencode]": {
+    "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
+    "agents": {
+      "sisyphus": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "prometheus": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "max"
+      },
+      "metis": {
+        "model": "opencode-go/gpt-5.6-luna",
+        "reasoning": "high"
+      },
+      "momus": {
+        "model": "opencode-go/gpt-5.6-luna",
+        "reasoning": "xhigh"
+      },
+      "oracle": {
+        "model": "opencode-go/gpt-5.6-luna",
+        "reasoning": "xhigh"
+      },
+      "hephaestus": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "max"
+      },
+      "atlas": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "sisyphus-junior": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "explore": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "low"
+      },
+      "librarian": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "multimodal-looker": {
+        "model": "opencode-go/gpt-5.6-luna",
+        "reasoning": "low"
+      }
+    },
+    "categories": {
+      "visual-engineering": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "ultrabrain": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "max"
+      },
+      "deep": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "max"
+      },
+      "artistry": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      },
+      "quick": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "low"
+      },
+      "unspecified-low": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "low"
+      },
+      "unspecified-high": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "max"
+      },
+      "writing": {
+        "model": "opencode-go/deepseek-v4-flash",
+        "reasoning": "high"
+      }
+    },
+    "runtime_fallback": {
+      "enabled": true,
+      "retry_on_errors": [429, 500, 502, 503, 504],
+      "max_fallback_attempts": 5,
+      "cooldown_seconds": 60,
+      "timeout_seconds": 30,
+      "notify_on_fallback": false,
+      "restore_primary_after_cooldown": true
+    },
+    "default_mode": {
+      "ultrawork": true,
+      "goal": false
+    },
+    "team_mode": {
+      "enabled": true,
+      "tmux_visualization": false,
+      "max_parallel_members": 4,
+      "max_members": 8,
+      "max_messages_per_run": 10000,
+      "max_wall_clock_minutes": 120,
+      "max_member_turns": 500,
+      "message_payload_max_bytes": 32768,
+      "recipient_unread_max_bytes": 262144,
+      "mailbox_poll_interval_ms": 3000
+    },
+    "experimental": {
+      "dynamic_context_pruning": {
+        "enabled": true,
+        "notification": "detailed",
+        "protected_tools": [
+          "task",
+          "todowrite",
+          "todoread",
+          "lsp_rename",
+          "session_read",
+          "session_write",
+          "session_search"
+        ]
+      }
+    }
+  },
+  "_migrations": [
+    "2026-07-opencode-config-unification",
+    "2026-08-reasoning-unification"
+  ]
+}
