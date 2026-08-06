@@ -13,15 +13,15 @@
         "reasoning": "max"
       },
       "metis": {
-        "model": "opencode-go/gpt-5.6-luna",
+        "model": "opencode-go/deepseek-v4-flash",
         "reasoning": "high"
       },
       "momus": {
-        "model": "opencode-go/gpt-5.6-luna",
+        "model": "opencode-go/deepseek-v4-flash",
         "reasoning": "xhigh"
       },
       "oracle": {
-        "model": "opencode-go/gpt-5.6-luna",
+        "model": "opencode-go/deepseek-v4-flash",
         "reasoning": "xhigh"
       },
       "hephaestus": {
@@ -83,6 +83,7 @@
         "reasoning": "high"
       }
     },
+    "model_fallback": false,
     "runtime_fallback": {
       "enabled": true,
       "retry_on_errors": [429, 500, 502, 503, 504],
