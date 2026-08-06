@@ -19,6 +19,21 @@ $script:FILE_MANIFEST = @(
   @{ RepoRel = 'npm/.npmrc.template';                          LiveRel = '.npmrc';                                    Kind = 'template' }
 )
 
+$script:ENV_MANIFEST = @(
+  @{
+    # Raises opencode's hard default cap on per-request output tokens from
+    # 32_000 (OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX, read at startup from the
+    # process environment only - it CANNOT live in opencode.json/.env). Without
+    # it, models declaring a higher output limit (e.g. 384000) are silently
+    # truncated to 32000. Value is non-secret and fixed; it must be a positive
+    # integer (invalid/empty falls back to 32000). User scope survives app
+    # reinstalls (lives in the registry, opened processes inherit it).
+    Name  = 'OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX'
+    Value = '384000'
+    Scope = 'User'
+  }
+)
+
 $script:SECRET_KEYS = @('CONTEXT7_API_KEY','NPM_TOKEN','OPENROUTER_API_KEY','NVIDIA_API_KEY','OPENCODE_API_KEY','OPENCODE_GO_KEY','OC_USAGE_DIR','GIT_NAME','GIT_EMAIL','GIT_EDITOR')
 $script:REQUIRED_VARS  = @('CONTEXT7_API_KEY','NPM_TOKEN','GIT_NAME','GIT_EMAIL','GIT_EDITOR')
 $script:OPTIONAL_VARS  = @('OC_USAGE_DIR','OPENROUTER_API_KEY','NVIDIA_API_KEY','OPENCODE_API_KEY','OPENCODE_GO_KEY')

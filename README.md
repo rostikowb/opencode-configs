@@ -160,6 +160,14 @@ The layout below mirrors `scripts/manifest.ps1` (`FILE_MANIFEST`) — the single
 
 Repo-only files that are **never deployed**: `README.md`, `.gitignore`, `secrets.env.example`, and everything under `scripts/` (including `manifest.ps1` itself).
 
+### Environment variables deployed
+
+Beyond files, `install.ps1` also deploys the non-secret OS environment variables declared in `scripts/manifest.ps1` (`ENV_MANIFEST`). They are idempotent (skipped when already correct) and `-DryRun`-safe:
+
+| Variable | Value | Scope | Purpose |
+| --- | --- | --- | --- |
+| `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX` | `384000` | User | Removes opencode's hard 32_000 cap on per-request output tokens. Read from the process environment **at startup only** — it cannot live in `opencode.json` or a `.env` file. Positive integer; invalid/empty falls back to 32000. User scope survives app reinstalls (lives in the Windows registry, new processes inherit it). After a change, fully restart opencode. |
+
 ## Backing up from a live machine
 
 `scripts/backup.ps1` syncs the *other* direction: live files -> repository, redacting secrets on the way out.
@@ -197,6 +205,14 @@ The `oh-my-openagent` plugin is fetched from the npm registry on the first openc
 ### Config appears in the "wrong" place
 
 This project targets the **default Windows locations** only: `%USERPROFILE%\.config\opencode`, `%USERPROFILE%\.agents`, `%USERPROFILE%\.gemini`, `%USERPROFILE%\.omo`, `%USERPROFILE%\.gitconfig`, `%USERPROFILE%\.npmrc`. `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, and `%ProgramData%`-managed configuration are **out of scope** — if you redirect opencode or git through those, adjust the live paths yourself and re-run backup.
+
+### opencode output is truncated at 32K tokens
+
+opencode's core caps per-request output at 32_000 tokens by default, even when the model declares a higher limit (e.g. 384000). The cap is read from the process environment at startup via `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX` — there is **no config-file or `.env` mechanism** for it. `install.ps1` deploys this variable automatically (see "Environment variables deployed"), but if truncation persists:
+
+- Verify the variable exists for your user: `[Environment]::GetEnvironmentVariable('OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX','User')` → must be `384000` (a positive integer; anything invalid silently falls back to 32000).
+- **Fully restart opencode** (desktop app: quit and relaunch, not just a new tab) — the value is read once at startup.
+- The variable is inherited from the launching process; if opencode was started from an already-open terminal, start a new terminal/session after setting it.
 
 ### rtk-prefixed commands fail
 

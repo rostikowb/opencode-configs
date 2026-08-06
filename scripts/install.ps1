@@ -16,6 +16,8 @@ install.ps1 — deploy dotfiles from the repo to a target home directory.
 * For every manifest entry the live target is either left untouched (content
   identical -> skip, idempotent), backed up to <file>.bak-<ts-ms> (uniqueness
   loop, never overwrites) and rewritten (content differs), or created (missing).
+* Also deploys the non-secret OS environment variables listed in ENV_MANIFEST
+  (idempotent, -DryRun safe, never requires secrets).
 * -DryRun is an explicit no-write branch: prints every action, writes nothing.
 * Never deletes live files, never overwrites without a backup, never prints
   secret values, collects per-file results and exits 1 on any error.
@@ -42,6 +44,10 @@ if (-not (Test-Path -LiteralPath $manifestPath)) {
 
 if ($null -eq $script:FILE_MANIFEST -or @($script:FILE_MANIFEST).Count -lt 1) {
     Write-Error 'FILE_MANIFEST is empty — manifest.ps1 did not load correctly.'
+    exit 1
+}
+if ($null -eq $script:ENV_MANIFEST) {
+    Write-Error 'ENV_MANIFEST is missing — manifest.ps1 did not load correctly.'
     exit 1
 }
 
@@ -248,6 +254,35 @@ foreach ($entry in $script:FILE_MANIFEST) {
     $content = if ($kind -eq 'template') { Get-RenderedContent -RawContent $raw -IsJson $isJsonTarget -RepoLabel $repoRel } else { $raw }
     $livePath = Join-Path $HomeRoot $liveRel
     $results += Invoke-WriteOneFile -LivePath $livePath -Content $content -RepoLabel $repoRel -IsJson $isJsonTarget
+}
+
+# ------------------------------------------------------------ env deploy --
+foreach ($entry in $script:ENV_MANIFEST) {
+    $name  = $entry.Name
+    $value = $entry.Value
+    if ([string]::IsNullOrWhiteSpace($name) -or [string]::IsNullOrWhiteSpace($value)) {
+        $results += @{ Status = 'error'; Live = "env:$name"; Message = 'ENV_MANIFEST entry is missing Name or Value' }
+        continue
+    }
+    try {
+        $current = [System.Environment]::GetEnvironmentVariable($name, $entry.Scope)
+        if ($current -eq $value) {
+            Write-Host "identical env: $name ($($entry.Scope))"
+            $results += @{ Status = 'identical'; Live = "env:$name"; Message = $null }
+            continue
+        }
+        if ($DryRun) {
+            Write-Host "DRY-RUN: would set env $name ($($entry.Scope)) to $value"
+            $results += @{ Status = 'would-change'; Live = "env:$name"; Message = $null }
+            continue
+        }
+        [System.Environment]::SetEnvironmentVariable($name, $value, $entry.Scope)
+        Write-Host "set env: $name ($($entry.Scope)) = $value"
+        $results += @{ Status = 'changed'; Live = "env:$name"; Message = $null }
+    }
+    catch {
+        $results += @{ Status = 'error'; Live = "env:$name"; Message = $_.Exception.Message }
+    }
 }
 
 # ----------------------------------------------------------------- summary --
