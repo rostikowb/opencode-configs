@@ -1,4 +1,4 @@
-# dotfiles
+# opencode-configs
 
 Portable configuration for an [opencode](https://opencode.ai) development environment on Windows, plus the scripts that deploy it to a fresh machine and sync changes back.
 
@@ -37,8 +37,8 @@ Verify the install with `opencode --version`.
 ### 3. Clone the repository
 
 ```powershell
-git clone <repo-url> %USERPROFILE%\dotfiles
-cd %USERPROFILE%\dotfiles
+git clone <repo-url> %USERPROFILE%\opencode-configs
+cd %USERPROFILE%\opencode-configs
 ```
 
 (Use the actual repository URL in place of `<repo-url>`.)
