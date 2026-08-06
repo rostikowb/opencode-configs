@@ -13,9 +13,22 @@ This document covers:
 
 ## New-PC bootstrap
 
-The steps below take a fresh Windows machine to a fully configured opencode setup in a few commands. Everything is driven from a plain PowerShell prompt.
+The steps below take a fresh Windows machine to a fully configured opencode setup. **👤 = manual action required from you; ⚙️ = done automatically (by script or by opencode itself).**
 
-### 1. Prerequisites: git and Node.js (via winget)
+### Action plan (summary)
+
+| # | Step | Who | What happens |
+| --- | --- | --- | --- |
+| 1 | Install git + Node.js | 👤 | run 2 winget commands, restart terminal |
+| 2 | Install opencode (GUI or CLI) | 👤 | download/install the app — **not** in this repo |
+| 3 | Clone this repo | 👤 | one git command |
+| 4 | Create + fill `secrets.env` | 👤 | **your keys/tokens — the only real manual config step** |
+| 5 | Run `install.ps1` | ⚙️ | renders and deploys all 14 config targets (backs up existing) |
+| 6 | Provider login | 👤 | `opencode auth login` or GUI account panel (or run `write-auth.ps1`) |
+| 7 | First opencode run | ⚙️ | auto-installs the oh-my-openagent plugin (needs network) |
+| 8 | Install rtk | 👤 | optional — only if you use the antigravity rules |
+
+### 1. Prerequisites: git and Node.js (via winget) — 👤
 
 Install git and Node.js with the Windows Package Manager:
 
@@ -26,9 +39,9 @@ winget install --id OpenJS.NodeJS.LTS -e
 
 Restart the terminal so `git` and `node` are on `PATH`. Verify with `git --version` and `node --version`.
 
-### 2. Install opencode (CLI or desktop GUI)
+### 2. Install opencode (CLI or desktop GUI) — 👤
 
-opencode is available both as a terminal CLI and as a desktop GUI app — **they share the exact same config files**, so this repo works identically for either:
+opencode is available both as a terminal CLI and as a desktop GUI app — **they share the exact same config files**, so this repo works identically for either. The app itself is **not** in this repo; you install it once:
 
 ```powershell
 # Option A — desktop GUI app (recommended for GUI users)
@@ -41,16 +54,14 @@ npm i -g opencode-ai
 
 Verify the install with `opencode --version` (or open the app — the GUI reads the same `%USERPROFILE%\.config\opencode`).
 
-### 3. Clone the repository
+### 3. Clone the repository — 👤
 
 ```powershell
-git clone <repo-url> %USERPROFILE%\opencode-configs
+git clone https://github.com/rostikowb/opencode-configs %USERPROFILE%\opencode-configs
 cd %USERPROFILE%\opencode-configs
 ```
 
-(Use the actual repository URL in place of `<repo-url>`.)
-
-### 4. Create and fill `secrets.env`
+### 4. Create and fill `secrets.env` — 👤 (the only manual config step)
 
 ```powershell
 Copy-Item secrets.env.example secrets.env
@@ -71,24 +82,24 @@ Open `secrets.env` and fill in the values. All keys are listed with empty values
 | `OPENCODE_API_KEY` | optional | used only by `scripts/write-auth.ps1` (opencode provider) |
 | `OPENCODE_GO_KEY` | optional | used only by `scripts/write-auth.ps1` (opencode-go provider) |
 
-`secrets.env` is git-ignored and never leaves the machine.
+`secrets.env` is git-ignored and never leaves the machine. **Tip:** you can copy the whole file from your existing machine (`%USERPROFILE%\opencode-configs\secrets.env`) — nothing to re-type.
 
-### 5. Run the installer
+### 5. Run the installer — ⚙️
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
-What it does:
+What it does (no human input needed):
 
-- loads `secrets.env` and fails fast with a clear, named error if a REQUIRED variable is missing, empty, or multiline;
+- loads `secrets.env` and fails fast with a clear, named error if a REQUIRED variable is missing, empty, or multiline (then you fix that one line and re-run);
 - renders every `template`-kind file (`{{VAR}}` -> value; `{{USERPROFILE}}` -> the deployment root, never a hardcoded path) and validates JSON targets with `ConvertFrom-Json` before writing;
 - copies `verbatim`-kind files as-is;
 - backs up any existing live target to `*.bak-<timestamp>` before overwriting — never deletes, never overwrites without a backup;
 - skips files whose content is identical (idempotent — safe to re-run);
-- `-DryRun` prints every action without writing anything.
+- `-DryRun` prints every action without writing anything (use it to preview first).
 
-### 6. Authenticate per provider
+### 6. Authenticate per provider — 👤
 
 Log in to each provider you use so `auth.json` lives under `%USERPROFILE%\.local\share\opencode`:
 
@@ -98,17 +109,19 @@ opencode auth login
 
 `opencode auth login` walks you through provider-by-provider authentication (including OAuth where supported). In the **desktop GUI** the same login is done through the app's settings/account panel — it writes the same `auth.json`. As an alternative, `scripts\write-auth.ps1` seeds `auth.json` from the optional API keys in `secrets.env` and merges with any existing entries.
 
-### 7. First run: plugin auto-install
+### 7. First run: plugin auto-install — ⚙️
 
-The first `opencode` run after install automatically installs the `oh-my-openagent` plugin (declared in `config/opencode/opencode.json.template`). This step downloads from the npm registry, so it **requires network access**.
+The first `opencode` run after install automatically installs the `oh-my-openagent` plugin (declared in `config/opencode/opencode.json.template`). This step downloads from the npm registry, so it **requires network access** — no human action, but it needs to be online.
 
-### 8. rtk (antigravity rules prerequisite)
+### 8. rtk (antigravity rules prerequisite) — 👤 (optional)
 
 `agents/rules/antigravity-rtk-rules.md` assumes the `rtk` (Rust Token Killer) CLI is installed and used as a shell-command prefix. The rule is **inactive until rtk is installed** — if `rtk` is not on `PATH`, commands prefixed with it simply fail, so install it before relying on the rule:
 
 - Install the rtk CLI from its project's releases (see the rule file for details).
 - Verify with `rtk --version` or `rtk gain`.
 - Until installed, treat the rule as inactive: the rest of the setup is unaffected.
+
+**After step 7 you're done** — opencode (GUI or CLI) is fully configured. The only steps that ever need you again: rotating keys in `secrets.env`, or running `backup.ps1` after changing live config.
 
 ## Repository layout
 
@@ -161,7 +174,8 @@ Behavior:
 If a REQUIRED variable is missing, empty, or contains newlines, the installer stops with an error naming the variable, e.g.:
 
 ```
-CONTEXT7_API_KEY is required (missing or empty). Add it to secrets.env and re-run.
+Required secret variable(s) missing or invalid (empty or multiline): CONTEXT7_API_KEY.
+Provide them in C:\Users\<you>\opencode-configs\secrets.env or as environment variables.
 ```
 
 Fix the named variable in `secrets.env` and re-run; the installer is idempotent and skips already-correct targets.
