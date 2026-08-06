@@ -5,6 +5,17 @@ agent: build
 
 Report real OpenCode Go usage statistics (tokens and cost per model) using the oc-usage CLI.
 
+## Not configured? Ask the user first
+
+If `{{OC_USAGE_DIR}}` is empty or `{{OC_USAGE_DIR}}\src\index.js` does not exist, the oc-usage plugin is **not installed**. Do not guess or fail. Instead:
+
+- Ask the user **whether they want the usage plugin installed**.
+- Explain **what it is**: a small Node CLI that reads OpenCode Go token usage and cost per model from the opencode.ai dashboard and renders a summary table in chat.
+- Explain **where to find it / how to install**: set `OC_USAGE_DIR` in `%USERPROFILE%\opencode-configs\secrets.env` to the absolute path of the cloned `oc-usage` directory (the one containing `src/index.js`), then run `scripts\install.ps1`. (On this machine the location in `secrets.env` is `D:\Work\programming\node\sandbox\oc-usage`.)
+- Respect their answer. If they decline, stop and do not run anything.
+
+Only proceed to the steps below when the tool actually exists and is configured.
+
 ## Steps
 
 1. Determine the CLI arguments:

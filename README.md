@@ -73,11 +73,11 @@ Open `secrets.env` and fill in the values. All keys are listed with empty values
 | --- | --- | --- |
 | `CONTEXT7_API_KEY` | required | context7 MCP server key (injected into `opencode.json`) |
 | `NPM_TOKEN` | required | npm registry auth token (injected into `.npmrc`) |
-| `OC_USAGE_DIR` | required | absolute path to the oc-usage tool directory (injected into `command/oc-usage.md`) |
+| `OC_USAGE_DIR` | optional | absolute path to the oc-usage tool directory (injected into `command/oc-usage.md`); if empty, the `/oc-usage` plugin is not used (see below) |
 | `GIT_NAME` | required | `user.name` for the rendered `.gitconfig` |
 | `GIT_EMAIL` | required | `user.email` for the rendered `.gitconfig` |
 | `GIT_EDITOR` | required | editor command for the rendered `.gitconfig` |
-| `OPENROUTER_API_KEY` | optional | used only by `scripts/write-auth.ps1` (openrouter provider) |
+| `OPENROUTER_API_KEY` | optional | uses `scripts/write-auth.ps1` (openrouter provider) |
 | `NVIDIA_API_KEY` | optional | used only by `scripts/write-auth.ps1` (nvidia provider) |
 | `OPENCODE_API_KEY` | optional | used only by `scripts/write-auth.ps1` (opencode provider) |
 | `OPENCODE_GO_KEY` | optional | used only by `scripts/write-auth.ps1` (opencode-go provider) |
@@ -122,6 +122,16 @@ The first `opencode` run after install automatically installs the `oh-my-openage
 - Until installed, treat the rule as inactive: the rest of the setup is unaffected.
 
 **After step 7 you're done** — opencode (GUI or CLI) is fully configured. The only steps that ever need you again: rotating keys in `secrets.env`, or running `backup.ps1` after changing live config.
+
+## oc-usage plugin (usage statistics)
+
+`OC_USAGE_DIR` is **optional**. It points at the `oc-usage` tool — a small Node CLI (`src\index.js`) that reads OpenCode Go usage statistics (tokens and cost per model) from the opencode.ai dashboard. When the variable is set in `secrets.env`, the `/oc-usage` opencode command is deployed and functional.
+
+When it is **not** set, the `/oc-usage` command is left unconfigured. In that case the agent **must ask the user** whether they want the usage plugin installed, rather than silently assuming:
+
+- Explain **what it is**: a CLI that reports token usage and cost per model for OpenCode (via the opencode.ai dashboard), rendered as a table in chat.
+- Explain **where to find it** / how to install it: set `OC_USAGE_DIR` in `%USERPROFILE%\opencode-configs\secrets.env` to the absolute path of the cloned `oc-usage` tool (the directory containing `src/index.js`), then re-run `scripts\install.ps1`.
+- Let the user decide. If they decline, skip it and continue — the rest of the setup is unaffected.
 
 ## Repository layout
 
