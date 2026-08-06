@@ -47,16 +47,27 @@ if ($null -eq $script:FILE_MANIFEST -or @($script:FILE_MANIFEST).Count -lt 1) {
 
 # ----------------------------------------------------------------- secrets --
 $secrets = @{}
+$multilineKeys = [System.Collections.Generic.List[string]]::new()
 if (Test-Path -LiteralPath $SecretsFile) {
     # File present -> file is authoritative (no env fallback: a missing var
     # here must surface as an error, never be silently filled from the env).
     $lines = [System.IO.File]::ReadAllLines($SecretsFile)
+    $lastKey = $null
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i].Trim()
         if ($line -eq '' -or $line.StartsWith('#')) { continue }
         $eq = $line.IndexOf('=')
         if ($eq -lt 0) {
-            Write-Warning "Ignoring malformed line $($i + 1) in $SecretsFile (no '=')."
+            # Non-empty, non-comment line without '=' is a continuation of the
+            # previous value (multiline). ReadAllLines silently truncates such a
+            # value to its first line, so record the key here and abort below —
+            # never drop the continuation line with just a warning.
+            if ($null -eq $lastKey) {
+                Write-Warning "Ignoring malformed line $($i + 1) in $SecretsFile (no '=')."
+            }
+            elseif (-not $multilineKeys.Contains($lastKey)) {
+                $multilineKeys.Add($lastKey)
+            }
             continue
         }
         $key = $line.Substring(0, $eq).Trim()
@@ -65,6 +76,7 @@ if (Test-Path -LiteralPath $SecretsFile) {
             continue
         }
         $secrets[$key] = $line.Substring($eq + 1).Trim()
+        $lastKey = $key
     }
 }
 else {
@@ -72,6 +84,15 @@ else {
         $val = [Environment]::GetEnvironmentVariable($key)
         if ($null -ne $val) { $secrets[$key] = $val }
     }
+}
+
+# Multiline values read from the secrets file must abort: the per-line
+# parser above cannot represent them, so without this check a value
+# spanning two lines would be silently truncated to its first line.
+if ($multilineKeys.Count -gt 0) {
+    Write-Error ("Secret variable(s) '" + ($multilineKeys -join ',') +
+        "' have multiline values — refusing to proceed.")
+    exit 1
 }
 
 function Test-MultilineValue {
@@ -104,14 +125,16 @@ if ($badRequired.Count -gt 0) {
     exit 1
 }
 
-# Optional vars: missing -> warn only; provided-but-empty/multiline -> reject.
+# Optional vars: missing or empty -> warn only; a non-empty value that is
+# somehow still multiline -> reject (fail-closed). File-sourced multiline
+# values are already rejected above, so only env-var-sourced ones reach here.
 foreach ($key in $script:OPTIONAL_VARS) {
-    if (-not $secrets.ContainsKey($key)) {
-        Write-Warning "Optional secret variable '$key' is not set; continuing without it."
+    if (-not $secrets.ContainsKey($key) -or $secrets[$key] -eq '') {
+        Write-Warning "optional var $key not set; continuing without it."
         continue
     }
-    if ($secrets[$key] -eq '' -or (Test-MultilineValue $secrets[$key])) {
-        Write-Error "Secret variable '$key' has an empty or multiline value — refusing to proceed."
+    if (Test-MultilineValue $secrets[$key]) {
+        Write-Error "Secret variable '$key' has a multiline value — refusing to proceed."
         exit 1
     }
 }
