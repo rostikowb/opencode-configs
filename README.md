@@ -26,13 +26,20 @@ winget install --id OpenJS.NodeJS.LTS -e
 
 Restart the terminal so `git` and `node` are on `PATH`. Verify with `git --version` and `node --version`.
 
-### 2. Install the opencode CLI
+### 2. Install opencode (CLI or desktop GUI)
+
+opencode is available both as a terminal CLI and as a desktop GUI app — **they share the exact same config files**, so this repo works identically for either:
 
 ```powershell
+# Option A — desktop GUI app (recommended for GUI users)
+#   download the desktop installer from https://opencode.ai and install it,
+#   or copy your existing portable install (OpenCode.exe + opencode-cli.exe).
+
+# Option B — terminal CLI
 npm i -g opencode-ai
 ```
 
-Verify the install with `opencode --version`.
+Verify the install with `opencode --version` (or open the app — the GUI reads the same `%USERPROFILE%\.config\opencode`).
 
 ### 3. Clone the repository
 
@@ -89,7 +96,7 @@ Log in to each provider you use so `auth.json` lives under `%USERPROFILE%\.local
 opencode auth login
 ```
 
-`opencode auth login` walks you through provider-by-provider authentication (including OAuth where supported). As an alternative, `scripts\write-auth.ps1` seeds `auth.json` from the optional API keys in `secrets.env` and merges with any existing entries.
+`opencode auth login` walks you through provider-by-provider authentication (including OAuth where supported). In the **desktop GUI** the same login is done through the app's settings/account panel — it writes the same `auth.json`. As an alternative, `scripts\write-auth.ps1` seeds `auth.json` from the optional API keys in `secrets.env` and merges with any existing entries.
 
 ### 7. First run: plugin auto-install
 
